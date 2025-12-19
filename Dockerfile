@@ -1,37 +1,24 @@
-
-FROM node:19-alpine3.15 as dev-deps
+FROM node:19-alpine3.15 AS dev-deps
 WORKDIR /app
-COPY package.json package.json
+COPY graphql-actions/package.json graphql-actions/yarn.lock ./
 RUN yarn install --frozen-lockfile
 
-
-FROM node:19-alpine3.15 as builder
+FROM node:19-alpine3.15 AS builder
 WORKDIR /app
 COPY --from=dev-deps /app/node_modules ./node_modules
-COPY . .
-# RUN yarn test
+COPY graphql-actions/ .
 RUN yarn build
 
-FROM node:19-alpine3.15 as prod-deps
+FROM node:19-alpine3.15 AS prod-deps
 WORKDIR /app
-COPY package.json package.json
-RUN yarn install --prod --frozen-lockfile
+COPY graphql-actions/package.json graphql-actions/yarn.lock ./
+RUN yarn install --production --frozen-lockfile
 
-
-FROM node:19-alpine3.15 as prod
+FROM node:19-alpine3.15 AS prod
+WORKDIR /app
 EXPOSE 3000
-WORKDIR /app
-ENV APP_VERSION=${APP_VERSION}
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
-CMD [ "node","dist/main.js"]
-
-
-
-
-
-
-
-
+CMD ["node", "dist/main.js"]
 
